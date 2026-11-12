@@ -3,7 +3,7 @@
  * Enables offline installation on Android devices and caches core assets & AI models.
  */
 
-const CACHE_NAME = 'vision23-offline-v5';
+const CACHE_NAME = 'vision23-ghpages-v1';
 
 const PRECACHE_ASSETS = [
   './',

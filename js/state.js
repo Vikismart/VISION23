@@ -111,9 +111,13 @@ const NavState = {
   },
 
   /**
-   * Automatically discovers ESP nodes via backend ARP helper
+   * Automatically discovers ESP nodes via backend ARP helper (when running on local server)
    */
   async discoverEndpoints() {
+    // Skip backend ARP scan if on GitHub Pages or static host without backend
+    if (window.location.protocol === 'https:' && !window.location.hostname.match(/^[0-9.]+$/) && window.location.hostname !== 'localhost') {
+      return null;
+    }
     try {
       const res = await fetch('./api/discover.php', { signal: AbortSignal.timeout(2000), cache: 'no-store' });
       if (res.ok) {
