@@ -19,6 +19,11 @@ class TelemetryEngine {
     this.simUltrasonic = 65.0;
     this.simLidar = 240.0;
     this.velocity = -1.5;
+
+    // Web Serial Hardware state
+    this.serialPort = null;
+    this.serialReader = null;
+    this.isSerialConnected = false;
   }
 
   start() {
@@ -43,6 +48,15 @@ class TelemetryEngine {
       try { this.ws.close(); } catch (e) {}
       this.ws = null;
     }
+    if (this.serialReader) {
+      try { this.serialReader.cancel(); } catch (e) {}
+      this.serialReader = null;
+    }
+    if (this.serialPort) {
+      try { this.serialPort.close(); } catch (e) {}
+      this.serialPort = null;
+    }
+    this.isSerialConnected = false;
   }
 
   stopWatchdog() {
@@ -57,6 +71,17 @@ class TelemetryEngine {
    */
   startSimulation() {
     this.stop();
+
+    // Seed realistic initial readings immediately so the UI is active in 0 ms
+    this.simUltrasonic = 65.0;
+    this.simLidar = 240.0;
+    this.velocity = -1.5;
+    this.state.updateTelemetry({
+      ultrasonicCm: this.simUltrasonic,
+      lidarCm: this.simLidar,
+      lidarSignalQuality: 96,
+      isOnline: true
+    });
 
     this.timer = setInterval(() => {
       // Physical obstacle approach and retreat cycle
@@ -126,6 +151,73 @@ class TelemetryEngine {
   }
 
   /**
+   * Universal Telemetry Payload Parser
+   * Parses JSON objects, tagged payloads, and CSV telemetry from WebSocket, Web Serial, or REST.
+   */
+  parseIncomingTelemetry(rawInput) {
+    if (!rawInput) return;
+    this.lastPacketTime = Date.now();
+    try {
+      const raw = rawInput.trim();
+      if (raw.startsWith('{')) {
+        const data = JSON.parse(raw);
+        const updates = { isOnline: true };
+
+        // Format A: Direct aggregated properties {"ultrasonic": 45, "lidar": 166, ...}
+        if (data.ultrasonic !== undefined) {
+          updates.ultrasonicCm = parseFloat(data.ultrasonic);
+          this._lastUltraTime = Date.now();
+        }
+        if (data.lidar !== undefined) updates.lidarCm = parseFloat(data.lidar);
+        if (data.signal !== undefined) updates.lidarSignalQuality = parseInt(data.signal);
+
+        // Format B: Tagged sensor payloads {"sensor":"LiDAR", "distance":165}
+        const sensorType = (data.sensor || data.type || data.name || '').toLowerCase();
+        const dist = data.distance !== undefined ? parseFloat(data.distance) : 
+                     (data.dist !== undefined ? parseFloat(data.dist) : 
+                     (data.val !== undefined ? parseFloat(data.val) : 
+                     (data.value !== undefined ? parseFloat(data.value) : null)));
+
+        if (dist !== null && !isNaN(dist)) {
+          if (sensorType.includes('lidar') || sensorType.includes('laser') || sensorType.includes('tfluna') || sensorType.includes('vl53')) {
+            updates.lidarCm = dist;
+            if (data.signal !== undefined || data.quality !== undefined) {
+              updates.lidarSignalQuality = parseInt(data.signal || data.quality);
+            } else if (!this.state.telemetry.lidarSignalQuality) {
+              updates.lidarSignalQuality = 94;
+            }
+          } else if (sensorType.includes('ultra') || sensorType.includes('sonar') || sensorType.includes('hcsr04')) {
+            updates.ultrasonicCm = dist;
+            this._lastUltraTime = Date.now();
+          } else if (!sensorType) {
+            updates.lidarCm = dist;
+          }
+        }
+
+        // If Ultrasonic hasn't reported in > 3.5s while LiDAR is actively updating,
+        // range > 400cm (path clear ahead).
+        if (Date.now() - this._lastUltraTime > 3500 && this.state.telemetry.ultrasonicCm > 0) {
+          updates.ultrasonicCm = 999.0;
+        }
+
+        this.state.updateTelemetry(updates);
+      } else if (raw.includes(',')) {
+        // CSV format: "45.2,180.5" or "45.2,180.5,95"
+        const parts = raw.split(',');
+        this.state.updateTelemetry({
+          ultrasonicCm: parseFloat(parts[0]) || this.state.telemetry.ultrasonicCm,
+          lidarCm: parseFloat(parts[1]) || this.state.telemetry.lidarCm,
+          lidarSignalQuality: parts[2] ? parseInt(parts[2]) : 90,
+          isOnline: true
+        });
+        this._lastUltraTime = Date.now();
+      }
+    } catch (err) {
+      console.warn('[Telemetry] Error parsing hardware payload:', err);
+    }
+  }
+
+  /**
    * Connect to real ESP32 / Arduino hardware via WebSocket with auto-reconnect & watchdog
    */
   connectHardware() {
@@ -138,6 +230,16 @@ class TelemetryEngine {
 
     const wsUrl = this.normalizeWsUrl(this.state.config.telemetryWsUrl);
     this.state.config.telemetryWsUrl = wsUrl;
+
+    // Check for HTTPS Mixed Content Blocking on GitHub Pages
+    if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
+      console.warn('[Telemetry] Insecure WebSocket (ws://) blocked on HTTPS page (GitHub Pages).');
+      this.state.emit('telemetry:status', {
+        status: 'blocked-https',
+        message: 'BLOCKED (HTTPS) - Use Localhost or USB Serial'
+      });
+      return;
+    }
 
     // If socket is already active to this URL, don't reopen
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
@@ -165,73 +267,13 @@ class TelemetryEngine {
 
         try { localStorage.setItem('vision23_telemetry_url', wsUrl); } catch (e) {}
 
-        // Prompt broadcast if firmware supports request command
         try {
           this.ws.send('get');
         } catch (e) {}
       };
 
       this.ws.onmessage = (event) => {
-        this.lastPacketTime = Date.now();
-        try {
-          const raw = (event.data || '').trim();
-          if (raw.startsWith('{')) {
-            const data = JSON.parse(raw);
-            const updates = { isOnline: true };
-
-            // Format A: Direct aggregated properties {"ultrasonic": 45, "lidar": 166, ...}
-            if (data.ultrasonic !== undefined) {
-              updates.ultrasonicCm = parseFloat(data.ultrasonic);
-              this._lastUltraTime = Date.now();
-            }
-            if (data.lidar !== undefined) updates.lidarCm = parseFloat(data.lidar);
-            if (data.signal !== undefined) updates.lidarSignalQuality = parseInt(data.signal);
-
-            // Format B: Tagged sensor payloads {"sensor":"LiDAR", "distance":165}
-            const sensorType = (data.sensor || data.type || data.name || '').toLowerCase();
-            const dist = data.distance !== undefined ? parseFloat(data.distance) : 
-                         (data.dist !== undefined ? parseFloat(data.dist) : 
-                         (data.val !== undefined ? parseFloat(data.val) : 
-                         (data.value !== undefined ? parseFloat(data.value) : null)));
-
-            if (dist !== null && !isNaN(dist)) {
-              if (sensorType.includes('lidar') || sensorType.includes('laser') || sensorType.includes('tfluna') || sensorType.includes('vl53')) {
-                updates.lidarCm = dist;
-                if (data.signal !== undefined || data.quality !== undefined) {
-                  updates.lidarSignalQuality = parseInt(data.signal || data.quality);
-                } else if (!this.state.telemetry.lidarSignalQuality) {
-                  updates.lidarSignalQuality = 94;
-                }
-              } else if (sensorType.includes('ultra') || sensorType.includes('sonar') || sensorType.includes('hcsr04')) {
-                updates.ultrasonicCm = dist;
-                this._lastUltraTime = Date.now();
-              } else if (!sensorType) {
-                // Untagged single sensor reading
-                updates.lidarCm = dist;
-              }
-            }
-
-            // If Ultrasonic hasn't reported in > 3.5s while LiDAR is actively updating,
-            // the firmware has dropped ultrasonic because range > 400cm (path clear ahead).
-            if (Date.now() - this._lastUltraTime > 3500 && this.state.telemetry.ultrasonicCm > 0) {
-              updates.ultrasonicCm = 999.0;
-            }
-
-            this.state.updateTelemetry(updates);
-          } else if (raw.includes(',')) {
-            // E.g. "45.2,180.5" or "45.2,180.5,95"
-            const parts = raw.split(',');
-            this.state.updateTelemetry({
-              ultrasonicCm: parseFloat(parts[0]) || this.state.telemetry.ultrasonicCm,
-              lidarCm: parseFloat(parts[1]) || this.state.telemetry.lidarCm,
-              lidarSignalQuality: parts[2] ? parseInt(parts[2]) : 90,
-              isOnline: true
-            });
-            this._lastUltraTime = Date.now();
-          }
-        } catch (err) {
-          console.warn('[Telemetry] Error parsing hardware payload:', err);
-        }
+        this.parseIncomingTelemetry(event.data);
       };
 
       this.ws.onerror = () => {
@@ -242,14 +284,62 @@ class TelemetryEngine {
         this.state.updateTelemetry({ isOnline: false });
         this.ws = null;
         this.state.emit('telemetry:status', { status: 'reconnecting', message: 'WAITING FOR ESP...' });
-        // Aggressive retry: 800ms so it picks up immediately when device powers on
         this.scheduleAutoReconnect(800);
       };
     } catch (e) {
-      this.scheduleAutoReconnect(800);
+      if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
+        this.state.emit('telemetry:status', { status: 'blocked-https', message: 'BLOCKED (HTTPS) - Use Localhost or USB Serial' });
+      } else {
+        this.scheduleAutoReconnect(800);
+      }
     }
 
     this.startWatchdog();
+  }
+
+  /**
+   * Connect ESP32 directly via USB cable (Web Serial API)
+   * Fully supported on Chrome & Edge over HTTPS (including GitHub Pages!)
+   */
+  async connectWebSerial() {
+    if (!('serial' in navigator)) {
+      alert('The Web Serial API is supported in Chrome, Edge, and Opera desktop browsers.\nTo use wireless ESP32, host the app locally on XAMPP (http://localhost/robot-nav/).');
+      return;
+    }
+
+    try {
+      this.stop();
+      this.serialPort = await navigator.serial.requestPort();
+      await this.serialPort.open({ baudRate: 115200 });
+      this.isSerialConnected = true;
+
+      console.log('[Telemetry] Connected via USB Serial port.');
+      this.state.emit('telemetry:status', { status: 'connected', message: 'USB SERIAL CONNECTED' });
+      this.state.updateTelemetry({ isOnline: true });
+
+      const textDecoder = new TextDecoderStream();
+      this.serialReadableClosed = this.serialPort.readable.pipeTo(textDecoder.writable);
+      this.serialReader = textDecoder.readable.getReader();
+
+      let lineBuffer = '';
+      while (true) {
+        const { value, done } = await this.serialReader.read();
+        if (done) break;
+        lineBuffer += value;
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop(); // Retain incomplete line fragment
+        for (const line of lines) {
+          if (line.trim()) {
+            this.parseIncomingTelemetry(line);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Telemetry] Web Serial connection ended or error:', err);
+      this.isSerialConnected = false;
+      this.state.updateTelemetry({ isOnline: false });
+      this.state.emit('telemetry:status', { status: 'reconnecting', message: 'SERIAL DISCONNECTED' });
+    }
   }
 
   /**

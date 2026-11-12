@@ -54,11 +54,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // Section 2: Telemetry
   const quickTelemetryUrl = document.getElementById('quickTelemetryUrl');
   const btnQuickConnectTelemetry = document.getElementById('btnQuickConnectTelemetry');
+  const btnConnectSerial = document.getElementById('btnConnectSerial');
   const telemetryStatusTag = document.getElementById('telemetryStatusTag');
   const ultrasonicCard = document.getElementById('ultrasonicCard');
   const ultrasonicVal = document.getElementById('ultrasonicVal');
   const ultrasonicBar = document.getElementById('ultrasonicBar');
   const ultrasonicBadge = document.getElementById('ultrasonicBadge');
+
+  // HTTPS & Standby Action Elements
+  const httpsNoticeBanner = document.getElementById('httpsNoticeBanner');
+  const btnNoticeUseDemo = document.getElementById('btnNoticeUseDemo');
+  const btnNoticeUseWebcam = document.getElementById('btnNoticeUseWebcam');
+  const btnNoticeUseSerial = document.getElementById('btnNoticeUseSerial');
+  const btnCloseHttpsNotice = document.getElementById('btnCloseHttpsNotice');
+  const btnStandbyDemo = document.getElementById('btnStandbyDemo');
+  const btnStandbyWebcam = document.getElementById('btnStandbyWebcam');
 
   const lidarCard = document.getElementById('lidarCard');
   const lidarVal = document.getElementById('lidarVal');
@@ -252,12 +262,68 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Web Serial Connection (USB cable on Chrome/Edge)
+  if (btnConnectSerial) {
+    btnConnectSerial.addEventListener('click', async () => {
+      if (state.config.isSimulation) {
+        applySimulationMode(false);
+      }
+      await telemetry.connectWebSerial();
+    });
+  }
+
+  // Standby overlay action buttons
+  if (btnStandbyDemo) {
+    btnStandbyDemo.addEventListener('click', () => {
+      applySimulationMode(true);
+    });
+  }
+
+  if (btnStandbyWebcam) {
+    btnStandbyWebcam.addEventListener('click', async () => {
+      applySimulationMode(false);
+      setActiveTab(btnTabUsb);
+      await vision.setMode('usb');
+    });
+  }
+
+  // HTTPS Notice banner action buttons
+  if (btnNoticeUseDemo) {
+    btnNoticeUseDemo.addEventListener('click', () => {
+      applySimulationMode(true);
+    });
+  }
+
+  if (btnNoticeUseWebcam) {
+    btnNoticeUseWebcam.addEventListener('click', async () => {
+      applySimulationMode(false);
+      setActiveTab(btnTabUsb);
+      await vision.setMode('usb');
+    });
+  }
+
+  if (btnNoticeUseSerial) {
+    btnNoticeUseSerial.addEventListener('click', async () => {
+      applySimulationMode(false);
+      await telemetry.connectWebSerial();
+    });
+  }
+
+  if (btnCloseHttpsNotice) {
+    btnCloseHttpsNotice.addEventListener('click', () => {
+      if (httpsNoticeBanner) httpsNoticeBanner.style.display = 'none';
+    });
+  }
+
   // 5. Telemetry Status & Event Listeners
   state.on('telemetry:status', (s) => {
     if (telemetryStatusTag && !state.config.isSimulation) {
       if (s.status === 'connected') {
-        telemetryStatusTag.innerText = 'WS CONNECTED';
+        telemetryStatusTag.innerText = s.message || 'CONNECTED';
         telemetryStatusTag.style.color = 'var(--emerald-safe)';
+      } else if (s.status === 'blocked-https') {
+        telemetryStatusTag.innerText = 'BLOCKED (HTTPS)';
+        telemetryStatusTag.style.color = 'var(--rose-danger)';
       } else if (s.status === 'connecting' || s.status === 'reconnecting') {
         telemetryStatusTag.innerText = 'WAITING FOR ESP...';
         telemetryStatusTag.style.color = 'var(--amber-warning)';
@@ -704,10 +770,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 17. Initialize in REAL mode (Simulation OFF by default)
-  applySimulationMode(false);
+  // 17. Environment detection & Startup
+  const isHttps = window.location.protocol === 'https:';
+  const isGitHubPages = window.location.hostname.includes('github.io');
+
+  if (isHttps && httpsNoticeBanner) {
+    httpsNoticeBanner.style.display = 'block';
+  }
+
+  // If on GitHub Pages, start with Demo Mock enabled by default so live data displays immediately!
+  // On local XAMPP/localhost, start in Real Hardware Mode (Simulation OFF).
+  if (isGitHubPages) {
+    applySimulationMode(true);
+    showToast('🎮 GitHub Pages: Interactive Demo Mode active for preview');
+  } else {
+    applySimulationMode(false);
+  }
+
   telemetry.start();
   vision.start();
+
+  // If running locally, check if hardware connects within 3.5s; if not, show a gentle tip toast
+  if (!isGitHubPages) {
+    setTimeout(() => {
+      if (!state.telemetry.isOnline && !vision._espConnected && !state.config.isSimulation) {
+        showToast('💡 Tip: Tap "Demo Mock" or "USB Cam" to preview live perception.');
+      }
+    }, 3500);
+  }
 
   // 17b. Auto-discovery of active network endpoints
   state.on('config:discovered', (endpoints) => {

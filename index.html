@@ -78,6 +78,24 @@
       </label>
     </div>
 
+    <!-- GitHub Pages / HTTPS Security Notice Banner (Displayed only when hosted on HTTPS) -->
+    <div id="httpsNoticeBanner" class="https-notice-banner" style="display:none; margin-bottom: 10px;">
+      <div class="https-notice-content">
+        <div class="https-notice-icon">🌐</div>
+        <div class="https-notice-body">
+          <div class="https-notice-title">Hosted on GitHub Pages (HTTPS Environment)</div>
+          <div class="https-notice-text">
+            Browsers block insecure local hardware (<code class="hud-code">http://</code> & <code class="hud-code">ws://</code>) from HTTPS websites.
+            To connect wireless ESP32, run locally via XAMPP (<code class="hud-code">http://localhost/robot-nav/</code>). On this page, use:
+            <button id="btnNoticeUseDemo" class="notice-link-btn">🎮 Run Demo Mock</button>
+            <button id="btnNoticeUseWebcam" class="notice-link-btn">📹 Device Webcam</button>
+            <button id="btnNoticeUseSerial" class="notice-link-btn">🔌 USB Serial</button>
+          </div>
+        </div>
+        <button id="btnCloseHttpsNotice" class="btn-icon-close" title="Dismiss">✕</button>
+      </div>
+    </div>
+
     <!-- Urgent Proximity Danger Banner -->
     <div id="dangerAlertBanner" class="danger-alert-banner">
       <div style="display:flex; align-items:center; gap:8px;">
@@ -162,6 +180,26 @@
         <div class="stream-crosshair">
           <div class="crosshair-center"></div>
         </div>
+
+        <!-- Standby / Quick Action Overlay (Shown when stream is connecting or offline) -->
+        <div id="streamStandbyOverlay" class="stream-standby-overlay">
+          <div class="standby-icon-ring">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 7l-7 5 7 5V7z"></path>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          <div id="standbyHeading" class="standby-title">Awaiting Live Camera Feed</div>
+          <p id="standbySubtext" class="standby-desc">Targeting: <code id="standbyTargetUrl">http://10.112.87.152:81/stream</code></p>
+          <div class="standby-actions">
+            <button id="btnStandbyDemo" class="btn-standby-action primary">
+              <span>🎮 Launch Demo Simulation</span>
+            </button>
+            <button id="btnStandbyWebcam" class="btn-standby-action secondary">
+              <span>📹 Use Device Camera</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Stream Control Toolbar -->
@@ -203,6 +241,7 @@
       <div id="telemetryControlBar" class="stream-sub-bar" style="margin-bottom: 12px;">
         <input type="text" id="quickTelemetryUrl" class="stream-ip-input" placeholder="ws://10.112.87.74:81" value="ws://10.112.87.74:81" />
         <button id="btnQuickConnectTelemetry" class="btn-sub-action">Connect Sensors</button>
+        <button id="btnConnectSerial" class="btn-sub-action" title="Connect ESP32 via USB cable (Web Serial on Chrome/Edge)">🔌 USB Serial</button>
       </div>
 
       <!-- Sensor Dual Grid: Section 1 Ultrasonic & Section 2 LiDAR -->

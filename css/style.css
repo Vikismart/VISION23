@@ -1415,3 +1415,194 @@ input:checked + .slider:before {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+/* ==========================================================================
+   HTTPS / GitHub Pages Warning & Helper Banner
+   ========================================================================== */
+.https-notice-banner {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-left: 4px solid var(--amber-warning);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.https-notice-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.https-notice-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.https-notice-body {
+  flex: 1;
+}
+
+.https-notice-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--amber-warning);
+  letter-spacing: 0.3px;
+  margin-bottom: 3px;
+}
+
+.https-notice-text {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.hud-code {
+  font-family: var(--font-mono);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--cyan-primary);
+  font-size: 0.7rem;
+}
+
+.notice-link-btn {
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid var(--cyan-primary);
+  color: var(--cyan-primary);
+  font-weight: 600;
+  font-size: 0.68rem;
+  padding: 1px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 2px;
+  transition: all 0.2s ease;
+}
+
+.notice-link-btn:hover {
+  background: var(--cyan-primary);
+  color: #042f2e;
+}
+
+.btn-icon-close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.btn-icon-close:hover {
+  color: #fff;
+}
+
+/* ==========================================================================
+   Stream Viewport Standby / Action Overlay
+   ========================================================================== */
+.stream-standby-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(10, 14, 23, 0.9) 0%, rgba(5, 8, 16, 0.98) 100%);
+  z-index: 4;
+  padding: 16px;
+  text-align: center;
+  gap: 8px;
+}
+
+.standby-icon-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1.5px dashed var(--cyan-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan-primary);
+  animation: pulseRotate 12s linear infinite;
+  box-shadow: 0 0 16px var(--cyan-glow);
+}
+
+@keyframes pulseRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.standby-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.standby-desc {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  max-width: 320px;
+  line-height: 1.35;
+}
+
+.standby-desc code {
+  font-family: var(--font-mono);
+  color: var(--cyan-primary);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.standby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-standby-action {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-standby-action.primary {
+  background: var(--cyan-primary);
+  color: #042f2e;
+  border: 1px solid var(--cyan-primary);
+  box-shadow: 0 0 12px var(--cyan-glow);
+}
+
+.btn-standby-action.primary:hover {
+  background: #22d3ee;
+  transform: translateY(-1px);
+}
+
+.btn-standby-action.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-standby-action.secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--cyan-primary);
+}

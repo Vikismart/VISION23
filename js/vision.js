@@ -483,10 +483,40 @@ class VisionEngine {
   }
 
   /**
+   * Standby overlay management for stream viewport
+   */
+  showStandbyOverlay(heading, desc, targetUrl) {
+    const overlay = document.getElementById('streamStandbyOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    if (heading) {
+      const h = document.getElementById('standbyHeading');
+      if (h) h.innerText = heading;
+    }
+    if (desc) {
+      const s = document.getElementById('standbySubtext');
+      if (s) s.innerHTML = desc;
+    }
+    if (targetUrl) {
+      const u = document.getElementById('standbyTargetUrl');
+      if (u) u.innerText = targetUrl;
+    }
+  }
+
+  hideStandbyOverlay() {
+    const overlay = document.getElementById('streamStandbyOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  /**
    * Fast probe to verify if ESP32-CAM is powered on and answering TCP
    */
   async probeEspCamAvailable(url) {
     if (!url) return false;
+    // On HTTPS (e.g. GitHub Pages), direct http:// fetch is blocked by browser mixed content
+    if (window.location.protocol === 'https:' && url.startsWith('http://')) {
+      return false;
+    }
     try {
       const parsed = new URL(url);
       const probeUrl = `http://${parsed.hostname}:${parsed.port || '81'}/stream`;
@@ -552,10 +582,23 @@ class VisionEngine {
     };
 
     this.stopEspStream();
+
+    // Check for HTTPS Mixed Content restriction (e.g. GitHub Pages)
+    if (window.location.protocol === 'https:' && streamUrl.startsWith('http://')) {
+      _setStreamStatus('Stream blocked on HTTPS (Mixed Content)', false);
+      this.showStandbyOverlay(
+        'HTTPS Mixed Content Blocked',
+        'Browsers forbid loading unencrypted <code class="hud-code">http://</code> camera streams from HTTPS sites.<br/>Use <strong>Device Camera</strong>, <strong>Demo Mock</strong>, or run locally via XAMPP.',
+        streamUrl
+      );
+      return;
+    }
+
     this.streamImg.style.display = 'block';
     this.streamImg.crossOrigin = 'anonymous';
 
     _setStreamStatus('Connecting to ESP32-CAM...', false);
+    this.showStandbyOverlay('Awaiting Live Camera Feed', 'Targeting camera node:', streamUrl);
 
     const executeConnect = () => {
       if (this.state.config.isSimulation || this.state.config.streamMode !== 'esp32') return;
@@ -564,6 +607,7 @@ class VisionEngine {
       this.streamImg.onload = () => {
         if (!this._espConnected) {
           this._espConnected = true;
+          this.hideStandbyOverlay();
           _setStreamStatus('LIVE: ESP32-CAM ● Connected', true);
           this.startLivenessChecker(streamUrl);
         }
@@ -572,6 +616,7 @@ class VisionEngine {
       this.streamImg.onerror = () => {
         this._espConnected = false;
         _setStreamStatus('Waiting for ESP32-CAM to power on...', false);
+        this.showStandbyOverlay('ESP32-CAM Offline or Unreachable', 'Ensure device is powered and connected to the same Wi-Fi:', streamUrl);
         this.resumeFastProbing(streamUrl);
       };
 
@@ -583,6 +628,7 @@ class VisionEngine {
         if (this.streamImg && this.streamImg.naturalWidth > 0) {
           if (!this._espConnected) {
             this._espConnected = true;
+            this.hideStandbyOverlay();
             _setStreamStatus('LIVE: ESP32-CAM ● Connected', true);
             this.startLivenessChecker(streamUrl);
           }
@@ -695,6 +741,7 @@ class VisionEngine {
         this.liveVideo.srcObject = this.mediaStream;
         this.liveVideo.style.display = 'block';
         await this.liveVideo.play();
+        this.hideStandbyOverlay();
       }
 
       if (statusBadge) statusBadge.innerText = 'LIVE: Connected Camera Feed';
@@ -702,6 +749,7 @@ class VisionEngine {
     } catch (err) {
       console.error('[Vision 23] Could not open camera:', err);
       if (statusBadge) statusBadge.innerText = `Camera Standby (${err.name || 'Denied'})`;
+      this.showStandbyOverlay('Camera Access Denied or Busy', 'Please allow camera permissions in your browser or select another device.', 'navigator.mediaDevices');
     }
   }
 
@@ -725,11 +773,14 @@ class VisionEngine {
     if (enabled) {
       this.stopMediaStream();
       this.stopEspStream();
+      this.hideStandbyOverlay();
       if (this.streamImg) this.streamImg.style.display = 'none';
       if (this.liveVideo) this.liveVideo.style.display = 'none';
       if (this.simCanvas) this.simCanvas.style.display = 'block';
       if (statusBadge) statusBadge.innerText = 'AI FEED (Simulated Demo)';
 
+      // Trigger step 0 immediately so data displays with 0ms delay!
+      this.triggerDetectionStep();
       this.startDetectionCycle();
     } else {
       // Turn simulation OFF
@@ -761,32 +812,40 @@ class VisionEngine {
     }
   }
 
+  triggerDetectionStep() {
+    const item = this.mockDataset[this.currentIndex];
+    const minConf = item.confidenceRange[0];
+    const maxConf = item.confidenceRange[1];
+    const simulatedConfidence = parseFloat((minConf + Math.random() * (maxConf - minConf)).toFixed(1));
+    const estDistance = ((this.state.telemetry.lidarCm || 240) / 100).toFixed(1);
+
+    this.lastPredictions = [{
+      normBox: item.box,
+      class: item.objectClass,
+      score: simulatedConfidence / 100
+    }];
+
+    this.state.updateVision({
+      objectClass: item.objectClass,
+      objectCategory: item.objectCategory,
+      icon: item.icon,
+      confidence: simulatedConfidence,
+      bearing: item.bearing,
+      distanceEstimateM: estDistance,
+      threatLevel: item.threatLevel,
+      advice: item.advice,
+      boundingBox: item.box,
+      boxColor: item.color,
+      inferenceTimeMs: Math.floor(22 + Math.random() * 12)
+    });
+  }
+
   startDetectionCycle() {
     if (this.timer) clearInterval(this.timer);
     this.timer = setInterval(() => {
       if (!this.state.config.isSimulation) return;
-
       this.currentIndex = (this.currentIndex + 1) % this.mockDataset.length;
-      const item = this.mockDataset[this.currentIndex];
-
-      const minConf = item.confidenceRange[0];
-      const maxConf = item.confidenceRange[1];
-      const simulatedConfidence = parseFloat((minConf + Math.random() * (maxConf - minConf)).toFixed(1));
-      const estDistance = (this.state.telemetry.lidarCm / 100).toFixed(1);
-
-      this.state.updateVision({
-        objectClass: item.objectClass,
-        objectCategory: item.objectCategory,
-        icon: item.icon,
-        confidence: simulatedConfidence,
-        bearing: item.bearing,
-        distanceEstimateM: estDistance,
-        threatLevel: item.threatLevel,
-        advice: item.advice,
-        boundingBox: item.box,
-        boxColor: item.color,
-        inferenceTimeMs: Math.floor(22 + Math.random() * 12)
-      });
+      this.triggerDetectionStep();
     }, this.state.config.visionUpdateInterval);
   }
 
