@@ -1,0 +1,3 @@
+# Vision 23: Python Dependencies
+# Required for running the ESP32 USB-to-MJPEG serial bridge
+pyserial>=3.5

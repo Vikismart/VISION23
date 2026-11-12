@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0e17">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Vision 23">
+  <title>VISION 23</title>
+  <link rel="icon" type="image/png" href="assets/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- Main Responsive HUD Container -->
+  <div class="app-container">
+
+    <!-- Top Navigation & System HUD Bar -->
+    <header class="hud-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">
+          <!-- Cyber Eye / Robot SVG for Vision 23 -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+            <circle cx="12" cy="12" r="1" fill="currentColor"></circle>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>VISION 23</h1>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live / Simulation Mode Status Pill -->
+        <div id="systemStatusPill" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="systemStatusText">LIVE FEED</span>
+        </div>
+
+        <!-- Clear Cache Trigger -->
+        <button id="btnClearCacheQuick" class="btn-icon" aria-label="Clear Cache & Data" title="Clear Cache & Data">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
+
+        <!-- Download System Architecture Document (.docx) -->
+        <a href="docs/Vision_23_System_Architecture.docx" download class="btn-icon" aria-label="Download Architecture Spec" title="Download Architecture Document (.docx)" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:inherit;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </a>
+
+        <!-- Hardware & Stream Settings Modal Trigger -->
+        <button id="btnOpenSettings" class="btn-icon" aria-label="Settings & Hardware">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Simulation Control Bar (OFF by default) -->
+    <div class="simulation-toggle-bar">
+      <div class="sim-label-group">
+        <span class="sim-icon">🎮</span>
+        <div>
+          <div class="sim-title">
+            Simulation Mode
+            <span id="simStatusTag" class="sim-status-tag">OFF</span>
+          </div>
+          <div class="sim-desc">Virtual camera feed & sensor telemetry generator</div>
+        </div>
+      </div>
+      <label class="switch" title="Toggle Simulation On/Off">
+        <input type="checkbox" id="mainSimToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Urgent Proximity Danger Banner -->
+    <div id="dangerAlertBanner" class="danger-alert-banner">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span id="dangerAlertText">CRITICAL PROXIMITY: OBSTACLE AHEAD!</span>
+      </div>
+      <span style="font-size:0.75rem; text-decoration:underline;">HALT</span>
+    </div>
+
+    <!-- ========================================================
+         SECTION 1: Live Camera Stream Preview (Vision 23 Feed)
+         ======================================================== -->
+    <section class="card-section">
+      <div class="section-header">
+        <span class="section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 7l-7 5 7 5V7z"></path>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+          1. Live Camera Stream Preview
+        </span>
+        <span id="fpsCounter" class="stream-tag">24 FPS</span>
+      </div>
+
+      <!-- Feed Source Selector (ESP32 Stream / USB PC Cam / Simulation) -->
+      <div class="stream-source-tabs">
+        <button id="btnTabEsp32" class="btn-source-tab active" data-source="esp32">
+          <span>📡 ESP32 WiFi</span>
+        </button>
+        <button id="btnTabUsb" class="btn-source-tab" data-source="usb">
+          <span>📹 USB / PC Cam</span>
+        </button>
+        <button id="btnTabSim" class="btn-source-tab" data-source="simulation">
+          <span>🎮 Demo Mock</span>
+        </button>
+      </div>
+
+      <!-- Sub-Bar A: ESP32 Stream URL Direct Connect -->
+      <div id="espControlBar" class="stream-sub-bar">
+        <input type="text" id="quickEspUrl" class="stream-ip-input" placeholder="http://10.112.87.152:81/stream" value="http://10.112.87.152:81/stream" />
+        <button id="btnQuickConnectEsp" class="btn-sub-action">Connect Feed</button>
+      </div>
+
+      <!-- Sub-Bar B: USB / PC Camera Device Selector -->
+      <div id="usbControlBar" class="stream-sub-bar" style="display:none;">
+        <select id="cameraDeviceSelect" class="camera-device-select">
+          <option value="">Searching camera devices...</option>
+        </select>
+        <button id="btnRefreshCameras" class="btn-sub-action">Refresh</button>
+      </div>
+
+      <!-- Dedicated Video / Image Container for Live Feed -->
+      <div id="streamViewport" class="stream-viewport">
+        <!-- Live ESP32-CAM MJPEG Stream image tag -->
+        <img id="esp32StreamImg" alt="ESP32-CAM Feed" crossorigin="anonymous" style="display:none;" />
+
+        <!-- Live USB Webcam / Connected Camera Video element -->
+        <video id="liveWebcamVideo" autoplay playsinline muted style="display:none;"></video>
+
+        <!-- High-Performance Simulated Camera Canvas (Fallback) -->
+        <canvas id="simulatedStreamCanvas" style="display:none;"></canvas>
+
+        <!-- Dynamic AI Computer Vision Bounding Box Canvas Overlay -->
+        <canvas id="aiOverlayCanvas"></canvas>
+
+        <!-- Top Stream HUD Badges -->
+        <div class="stream-hud-top">
+          <div class="stream-status-badge">
+            <span class="status-dot"></span>
+            <span id="streamStatusText">Connecting to Camera Feed...</span>
+          </div>
+          <div class="stream-metrics">
+            <span class="stream-tag">VGA 640x480</span>
+          </div>
+        </div>
+
+        <!-- Center Crosshair HUD -->
+        <div class="stream-crosshair">
+          <div class="crosshair-center"></div>
+        </div>
+      </div>
+
+      <!-- Stream Control Toolbar -->
+      <div class="stream-controls-bar">
+        <span class="stream-info-text">Vision 23 Real-Time Stream</span>
+        <div class="stream-actions">
+          <button id="btnSnapshot" class="btn-stream-action" title="Capture Snapshot">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            Snap
+          </button>
+          <button id="btnFullscreen" class="btn-stream-action" title="Toggle Fullscreen">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            Expand
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 2: Real-Time Sensor Telemetry Dashboard
+         ======================================================== -->
+    <section class="card-section">
+      <div class="section-header">
+        <span class="section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+          </svg>
+          2. Real-Time Sensor Telemetry Dashboard
+        </span>
+        <span id="telemetryStatusTag" style="font-size:0.68rem; color:var(--text-dim); font-family:var(--font-mono);">STANDBY</span>
+      </div>
+
+      <!-- Sub-Bar: ESP Telemetry WebSocket URL Direct Connect -->
+      <div id="telemetryControlBar" class="stream-sub-bar" style="margin-bottom: 12px;">
+        <input type="text" id="quickTelemetryUrl" class="stream-ip-input" placeholder="ws://10.112.87.74:81" value="ws://10.112.87.74:81" />
+        <button id="btnQuickConnectTelemetry" class="btn-sub-action">Connect Sensors</button>
+      </div>
+
+      <!-- Sensor Dual Grid: Section 1 Ultrasonic & Section 2 LiDAR -->
+      <div class="sensors-grid">
+
+        <!-- 2.1 Ultrasonic Sensor (HC-SR04: Close-range distance in cm) -->
+        <div id="ultrasonicCard" class="sensor-card ultrasonic">
+          <div class="sensor-header">
+            <span class="sensor-name">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="9"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              Ultrasonic (HC-SR04)
+            </span>
+            <span id="ultrasonicBadge" class="sensor-badge">STANDBY</span>
+          </div>
+
+          <div class="sensor-readout">
+            <span id="ultrasonicVal" class="sensor-value">0.0</span>
+            <span class="sensor-unit">cm</span>
+          </div>
+
+          <!-- Dynamic Proximity Range Bar -->
+          <div class="distance-bar-track">
+            <div id="ultrasonicBar" class="distance-bar-fill" style="width: 0%;"></div>
+          </div>
+
+          <div class="sensor-sub-metric">
+            <span>Range: 2 - 400 cm</span>
+            <span id="ultrasonicModeText">Hardware Mode</span>
+          </div>
+        </div>
+
+        <!-- 2.2 LiDAR Sensor (TF-Luna / VL53L0X: Medium-to-long-range in cm) -->
+        <div id="lidarCard" class="sensor-card lidar">
+          <div class="sensor-header">
+            <span class="sensor-name">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              LiDAR Sensor
+            </span>
+            <span id="lidarMetersVal" class="sensor-badge">0.00 m</span>
+          </div>
+
+          <div class="sensor-readout">
+            <span id="lidarVal" class="sensor-value">0</span>
+            <span class="sensor-unit">cm</span>
+          </div>
+
+          <!-- Dynamic LiDAR Progress Bar -->
+          <div class="distance-bar-track">
+            <div id="lidarBar" class="distance-bar-fill" style="width: 0%;"></div>
+          </div>
+
+          <div class="sensor-sub-metric">
+            <span>Signal: <strong id="lidarSignalVal" style="color:var(--emerald-safe)">0%</strong></span>
+            <span id="lidarModeText">Hardware Mode</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 3: AI Object Identification & Vision Engine
+         ======================================================== -->
+    <section class="card-section ai-vision-card">
+      <div class="section-header">
+        <span class="section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          3. AI Object Identification & Vision Engine
+        </span>
+        <span class="ai-engine-pill">Vision 23 AI Engine</span>
+      </div>
+
+      <!-- Classification Display Box -->
+      <div class="ai-detection-box">
+        <div id="aiObjectIcon" class="ai-object-icon-box">👁️</div>
+        <div class="ai-details">
+          <div class="ai-label-row">
+            <span id="aiObjectName" class="ai-object-name">Scanning...</span>
+            <span id="aiConfidenceVal" class="ai-confidence-pill">0%</span>
+          </div>
+
+          <div class="ai-position-info">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+            <span id="aiPositionVal">Front Center</span>
+          </div>
+
+          <!-- Confidence Score Bar -->
+          <div class="ai-confidence-meter">
+            <div id="aiConfidenceFill" class="ai-confidence-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time Navigation Guidance Callout -->
+      <div class="ai-navigation-advice">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span id="aiAdviceText">Live camera feed active. Ready for detection.</span>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 4: Voice Interaction & Earbud Navigation Panel
+         ======================================================== -->
+    <section class="card-section voice-nav-card">
+      <div class="section-header">
+        <span class="section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          4. Voice Interaction & Earbud Panel
+        </span>
+        <span style="font-size:0.68rem; color:var(--cyan-primary); font-family:var(--font-mono);">TTS AUDIO</span>
+      </div>
+
+      <!-- Earbud / Headphone Navigation HUD Bar -->
+      <div class="earbud-hud-bar">
+        <div class="earbud-status">
+          <svg id="earbudStatusIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+          </svg>
+          <span id="earbudStatusText">Vision 23 Earbud Audio Enabled</span>
+        </div>
+
+        <!-- Hands-Free Earbud Toggle Switch -->
+        <div class="toggle-switch-wrapper">
+          <span>Hands-Free</span>
+          <label class="switch">
+            <input type="checkbox" id="earbudHandsFreeToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Pulsing Visual Microphone Interface Component -->
+      <div id="micActionBox" class="mic-action-container">
+        <div class="mic-button-wrapper">
+          <div class="mic-pulse-ring"></div>
+          <button id="btnMicMain" class="btn-mic-main" aria-label="Microphone Voice Query">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+        </div>
+
+        <span id="voiceStatusLabel" class="voice-status-label">Tap Mic or Ask a Question below</span>
+
+        <!-- Audio Waveform Visualizer Canvas -->
+        <div class="waveform-canvas-box">
+          <canvas id="audioWaveCanvas"></canvas>
+        </div>
+
+        <!-- Direct Voice / Spoken Question Input Bar -->
+        <div class="direct-voice-query-bar">
+          <div class="direct-voice-input-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="directVoiceQueryInput" class="direct-voice-query-input" placeholder="Ask any navigation question or tap mic above..." autocomplete="off" />
+          </div>
+          <button id="btnAskVoiceDirect" class="btn-ask-voice-direct" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span>Ask</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dialogue History Stream (Spoken Input & TTS Audio Response) -->
+      <div class="dialogue-stream">
+        <!-- Spoken User Query -->
+        <div id="userSpeechBubble" class="dialogue-bubble user" style="display:none;">
+          <div class="dialogue-bubble-tag">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            You Asked (Earbuds Mic):
+          </div>
+          <div id="userSpeechText">"What is the distance from the next object?"</div>
+        </div>
+
+        <!-- AI Text-To-Speech Audio Feedback -->
+        <div id="aiReplyBubble" class="dialogue-bubble ai" style="display:none;">
+          <div class="dialogue-bubble-tag">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+            Vision 23 Earbud Response (TTS):
+          </div>
+          <div id="aiReplyText">Nearest obstacle is 45 centimeters ahead via ultrasonic. LiDAR reads 2.1 meters.</div>
+        </div>
+      </div>
+
+      <!-- Quick Navigation Question Chips (Touch-friendly on mobile browsers) -->
+      <div class="quick-queries-section">
+        <div class="quick-queries-label">Frequently Asked Voice Queries:</div>
+        <div class="quick-chips-grid">
+          <button class="btn-query-chip" data-query="What is the distance from the next object?">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            "What is the distance from the next object?"
+          </button>
+
+          <button class="btn-query-chip" data-query="What is the next object?">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            "What is the next object?"
+          </button>
+
+          <button class="btn-query-chip" data-query="Is the path clear?">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            "Is the path clear?"
+          </button>
+
+          <button class="btn-query-chip" data-query="Full status report">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            "Full status report"
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SECTION 5: Travel Path & Obstacle Details Log
+         ======================================================== -->
+    <section class="card-section path-history-card">
+      <div class="section-header">
+        <span class="section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          5. Travel Path & Obstacle Details Log
+        </span>
+        <div style="display:flex; gap:6px;">
+          <button id="btnExportPathLogs" class="btn-stream-action" title="Export Route Log">📥 Export</button>
+          <button id="btnClearPathLogs" class="btn-stream-action" title="Clear Route Log">🗑️ Clear</button>
+        </div>
+      </div>
+
+      <div class="path-history-container">
+        <div id="pathLogEmpty" class="path-log-empty">No obstacle encounters logged yet. Active route is clear.</div>
+        <div id="pathLogList" class="path-log-list" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- Project Footer -->
+    <footer class="hud-footer">
+      <span>VISION 23</span>
+    </footer>
+
+  </div> <!-- End .app-container -->
+
+  <!-- ========================================================
+       Hardware Configuration & Pinout Modal Sheet
+       ======================================================== -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>Vision 23 Hardware & Stream Configuration</h2>
+        <button id="btnCloseSettings" class="btn-icon" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="inputEsp32Stream">ESP32-CAM MJPEG Stream URL</label>
+          <input type="text" id="inputEsp32Stream" class="form-input" placeholder="http://10.112.87.152:81/stream" />
+          <span class="form-hint">E.g., http://10.112.87.152:81/stream, http://192.168.1.50:81/stream or http://localhost:8080/stream</span>
+        </div>
+
+        <div class="form-group">
+          <label for="inputTelemetryWs">Telemetry WebSocket / REST URL</label>
+          <input type="text" id="inputTelemetryWs" class="form-input" placeholder="ws://10.112.87.74:81" />
+          <span class="form-hint">WebSocket endpoint streaming ultrasonic and LiDAR JSON payloads (e.g., ws://10.112.87.74:81).</span>
+        </div>
+
+        <div class="form-group">
+          <label>ECE Project Pinout & Wiring Quick Guide</label>
+          <pre class="hardware-code-block">
+ESP32 / Arduino Pinout Reference:
+• HC-SR04 Ultrasonic:
+  - VCC  -> 5V
+  - Trig -> GPIO 12
+  - Echo -> GPIO 14 (via 1k/2k resistor divider)
+  - GND  -> GND
+
+• TF-Luna / VL53L0X LiDAR:
+  - VCC -> 5V / 3.3V
+  - SDA -> GPIO 21 (I2C)
+  - SCL -> GPIO 22 (I2C)
+  - GND -> GND
+
+• ESP32-CAM:
+  - Standard AI-Thinker Pin Configuration
+  - WebServer port 80 / Stream port 81 (or USB via COM21)
+          </pre>
+        </div>
+
+        <div class="form-group" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);">
+          <label>Storage & Offline Cache Management</label>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">
+            Purge offline Service Worker cache, temporary model data, and stored route logs to free mobile device storage.
+          </p>
+          <button type="button" id="btnClearCacheModal" class="btn-secondary" style="border-color:var(--rose-danger); color:var(--rose-danger); width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Clear Offline Cache & Data
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btnSaveSettings" class="btn-primary">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Floating Toast Notification -->
+  <div id="appToast" class="toast-notice"></div>
+
+  <!-- JavaScript Modules in Dependency Order -->
+  <script src="vendor/tf.min.js"></script>
+  <script src="vendor/coco-ssd.min.js"></script>
+  <script src="js/path_history.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/telemetry.js"></script>
+  <script src="js/vision.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

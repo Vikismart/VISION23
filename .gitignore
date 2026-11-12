@@ -1,0 +1,51 @@
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Editor & IDE Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+*.bak
+
+# Python Environments & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+venv/
+ENV/
+env/
+.Python
+*.egg-info/
+dist/
+build/
+
+# Logs & Temporary Files
+*.log
+*.tmp
+*.temp
+
+# Arduino & Microcontroller Build Artifacts
+firmware/build/
+*.hex
+*.elf
+*.bin
+
+# Explicitly ensure AI models & vendor binaries are tracked in Git
+!vendor/
+!vendor/models/
+!vendor/models/**
+!vendor/*.min.js
